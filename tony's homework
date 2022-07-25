@@ -1,0 +1,40 @@
+
+import pandas as pd
+
+old_record_file = "schedule_report 20220714.csv"
+new_record_file = "schedule_report 20220722.csv"
+
+def main():
+    inconsistent_df = pd.DataFrame()
+    old_record_df = pd.read_csv(old_record_file)
+    old_ip_list = old_record_df['IPAddress'].to_list()
+    
+    latest_record_df = pd.read_csv(new_record_file)
+    latest_ip_list = latest_record_df['IPAddress'].to_list()
+    # 把新的 ip 紀錄起來
+    new_ip_record = latest_record_df[~latest_record_df['IPAddress'].isin(old_ip_list)]
+    new_ip_record.to_csv('./new_ip_record.csv')
+    # 對比不同 ip 的紀錄
+    for each_latest_ip in latest_ip_list:
+        if(each_latest_ip in old_ip_list):
+            old_record = old_record_df.loc[old_record_df['IPAddress'] == each_latest_ip].fillna('')
+            latest_reocrd = latest_record_df.loc[latest_record_df['IPAddress'] == each_latest_ip].fillna('')
+            compare_res_list =  (latest_reocrd.values == old_record.values)
+            if(False in compare_res_list):
+                old_record = old_record.assign(status="old")
+                latest_reocrd = latest_reocrd.assign(status="latest")
+                result = [inconsistent_df ,old_record, latest_reocrd]
+                inconsistent_df = pd.concat(result, ignore_index=True)
+                print(f"{each_latest_ip:<16} difference is recorded")
+                # print("False")
+            else:
+                # print("True")
+                continue
+        
+    inconsistent_df.to_csv("compare_old2new_record.csv")
+            
+    
+
+if __name__ == "__main__":
+    main()
+        
